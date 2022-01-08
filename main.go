@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path"
 	"runtime"
@@ -12,18 +14,20 @@ import (
 	"github.com/IBM/ibm-cos-sdk-go/aws/credentials/ibmiam"
 	"github.com/IBM/ibm-cos-sdk-go/aws/session"
 	"github.com/IBM/ibm-cos-sdk-go/service/s3"
+	"github.com/gorilla/mux"
 	"github.com/tkanos/gonfig"
 )
 
-var conf ApiConfiguration
+var apiconf ApiConfiguration
 
 const API_CONFIG = "/config/api_config.json"
 
 type ApiConfiguration struct {
 	ApiKey            string
-	ServiceInstanceID string
 	AuthEndpoint      string
 	ServiceEndpoint   string
+	ServiceInstanceID string
+	BucketName        string
 }
 
 // Builds a configuration object
@@ -31,14 +35,15 @@ func buildConfigurationObject(api_configuration ApiConfiguration) ApiConfigurati
 
 	log.Println("Building configuration file.")
 
-	conf := &ApiConfiguration{
+	apiconf := &ApiConfiguration{
 		ApiKey:            api_configuration.ApiKey,
-		ServiceInstanceID: api_configuration.ServiceInstanceID,
 		AuthEndpoint:      api_configuration.AuthEndpoint,
 		ServiceEndpoint:   api_configuration.ServiceEndpoint,
+		ServiceInstanceID: api_configuration.ServiceInstanceID,
+		BucketName:        api_configuration.BucketName,
 	}
 
-	return *conf
+	return *apiconf
 }
 
 // Loads a configuration file, found in /config/api_config.json
@@ -65,6 +70,37 @@ func loadConfigurationFile() (ApiConfiguration, error) {
 	return api_configuration, nil
 }
 
+func addCampSite(w http.ResponseWriter, r *http.Request) {
+
+	log.Println("Starting addCampSite execution.")
+
+	w.Write([]byte("Gorilla!\n"))
+
+	conf := aws.NewConfig().
+		WithEndpoint(apiconf.ServiceEndpoint).
+		WithCredentials(ibmiam.NewStaticCredentials(aws.NewConfig(),
+			apiconf.AuthEndpoint, apiconf.ApiKey, apiconf.ServiceInstanceID)).
+		WithS3ForcePathStyle(true)
+
+	sess := session.Must(session.NewSession())
+	client := s3.New(sess, conf)
+
+	// Variables and random content to sample, replace when appropriate
+	bucketName := apiconf.BucketName
+	key := "campsite.json"
+	content := bytes.NewReader([]byte("{name: \"mysite\"}"))
+
+	input := s3.PutObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
+		Body:   content,
+	}
+
+	// Call Function to upload (Put) an object
+	result, _ := client.PutObject(&input)
+	fmt.Println(result)
+}
+
 func main() {
 
 	log.Println("Starting api execution.")
@@ -75,25 +111,15 @@ func main() {
 		log.Println("Could not load configuration file.")
 	}
 
-	// Building global conf object, using api configuration
-	conf = buildConfigurationObject(api_configuration)
+	// Building global apiconf object, using api configuration
+	apiconf = buildConfigurationObject(api_configuration)
 
-	newBucket := "new-bucketee-campsitelist"
+	//register URL paths and handlers
+	r := mux.NewRouter()
 
-	conf := aws.NewConfig().
-		WithEndpoint(conf.ServiceEndpoint).
-		WithCredentials(ibmiam.NewStaticCredentials(aws.NewConfig(),
-			conf.AuthEndpoint, conf.ApiKey, conf.ServiceInstanceID)).
-		WithS3ForcePathStyle(true)
+	r.HandleFunc("/campsite", addCampSite).Methods("POST")
+	http.Handle("/", r)
 
-	sess := session.Must(session.NewSession())
-	client := s3.New(sess, conf)
-
-	input := &s3.CreateBucketInput{
-		Bucket: aws.String(newBucket),
-	}
-	client.CreateBucket(input)
-
-	d, _ := client.ListBuckets(&s3.ListBucketsInput{})
-	fmt.Println(d)
+	// Bind to a port and pass our router in
+	log.Fatal(http.ListenAndServe(":8000", r))
 }
