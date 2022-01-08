@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -28,6 +29,20 @@ type ApiConfiguration struct {
 	ServiceEndpoint   string
 	ServiceInstanceID string
 	BucketName        string
+}
+
+//campsite json request payload is as follows,
+//{
+//  "name":    "thename",
+//  "country": "thecountry",
+//  "city":    "thecity",
+//  "zip":     "zipcode"
+//}
+type Campsite struct {
+	Name    string `json:"name"`
+	Country string `json:"country"`
+	City    string `json:"city"`
+	Zip     string `json:"zip"`
 }
 
 // Builds a configuration object
@@ -57,7 +72,7 @@ func loadConfigurationFile() (ApiConfiguration, error) {
 	_, filename, _, ok := runtime.Caller(0)
 
 	if !ok {
-		return api_configuration, errors.New("Error calling runtime caller.")
+		return api_configuration, errors.New("error calling runtime caller")
 	}
 
 	// Reading configuration file
@@ -74,7 +89,10 @@ func addCampSite(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Starting addCampSite execution.")
 
-	w.Write([]byte("Gorilla!\n"))
+	//get input from body
+	var newCampsite Campsite
+	json.NewDecoder(r.Body).Decode(&newCampsite)
+	log.Print("Successfully received new campsite info: ", newCampsite)
 
 	conf := aws.NewConfig().
 		WithEndpoint(apiconf.ServiceEndpoint).
@@ -88,7 +106,9 @@ func addCampSite(w http.ResponseWriter, r *http.Request) {
 	// Variables and random content to sample, replace when appropriate
 	bucketName := apiconf.BucketName
 	key := "campsite.json"
-	content := bytes.NewReader([]byte("{name: \"mysite\"}"))
+	out, _ := json.Marshal(newCampsite)
+
+	content := bytes.NewReader([]byte(string(out)))
 
 	input := s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
