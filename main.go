@@ -89,10 +89,20 @@ func addCampSite(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Starting addCampSite execution.")
 
-	//get input from body
-	var newCampsite Campsite
-	json.NewDecoder(r.Body).Decode(&newCampsite)
-	log.Print("Successfully received new campsite info: ", newCampsite)
+	// Call ParseForm() to parse the raw query and update r.PostForm and r.Form.
+	if err := r.ParseForm(); err != nil {
+		log.Println("ParseForm() err: ", err)
+		return
+	}
+
+	newCampsite := Campsite{}
+
+	newCampsite.Name = r.FormValue("name")
+	newCampsite.Country = r.FormValue("country")
+	newCampsite.City = r.FormValue("city")
+	newCampsite.Zip = r.FormValue("zip")
+
+	log.Println(newCampsite)
 
 	conf := aws.NewConfig().
 		WithEndpoint(apiconf.ServiceEndpoint).
@@ -107,6 +117,8 @@ func addCampSite(w http.ResponseWriter, r *http.Request) {
 	bucketName := apiconf.BucketName
 	key := "campsite.json"
 	out, _ := json.Marshal(newCampsite)
+
+	log.Println(out)
 
 	content := bytes.NewReader([]byte(string(out)))
 
