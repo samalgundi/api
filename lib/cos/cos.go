@@ -3,8 +3,14 @@ package cos
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"os"
+	"path"
+	"runtime"
+
+	"github.com/tkanos/gonfig"
 
 	"github.com/IBM/ibm-cos-sdk-go/aws"
 	"github.com/IBM/ibm-cos-sdk-go/aws/credentials/ibmiam"
@@ -14,10 +20,13 @@ import (
 	camp "github.com/samalgundi/api/lib/campsite"
 )
 
-// Configuration contains all configuration that is necessary for this package
-type Configuration struct {
+// expects a configuration file at this location
+const cosConfig = "/config/config.json"
+
+// configuration contains all configuration that is necessary for this package
+type configuration struct {
 	APIKey            string
-	AuthEndpoint      string	
+	AuthEndpoint      string
 	ServiceEndpoint   string
 	ServiceInstanceID string
 	BucketName        string
@@ -25,23 +34,54 @@ type Configuration struct {
 }
 
 // stores the configuration information
-var conf Configuration
+var conf configuration
 
 // Init initializes the COS package
-func Init(c Configuration) {
+func init() {
 
-	conf.BucketName = c.BucketName
+	log.Println("Starting cos.Init execution.")
+
+	// Loading App Id configuration file
+	confError := loadConfigurationFile(&conf)
+	if confError != nil {
+		log.Println("Could not load configuration file.")
+	}
 
 	// configuration for the COS client
 	conf.COSClientConf = aws.NewConfig().
-		WithEndpoint(c.ServiceEndpoint).
+		WithEndpoint(conf.ServiceEndpoint).
 		WithCredentials(ibmiam.NewStaticCredentials(aws.NewConfig(),
-			c.AuthEndpoint, c.APIKey, c.ServiceInstanceID)).
+			conf.AuthEndpoint, conf.APIKey, conf.ServiceInstanceID)).
 		WithS3ForcePathStyle(true)
+
+}
+
+// Loads a configuration file, found in /config/api_config.json
+func loadConfigurationFile(c *configuration) error {
+
+	log.Println("Loading configuration file.")
+
+	// Using runtime.Caller, to make sure we get the path where the program is being executed
+	_, filename, _, ok := runtime.Caller(0)
+
+	if !ok {
+		return errors.New("error calling runtime caller")
+	}
+
+	// Reading configuration file
+	cosConfigurationError := gonfig.GetConf(path.Dir(filename)+string(os.PathSeparator)+cosConfig, c)
+
+	if cosConfigurationError != nil {
+		return cosConfigurationError
+	}
+
+	return nil
 }
 
 // PutCos writes a file to COS
 func PutCos(c camp.Campsite) {
+
+	log.Println("Starting cos.PutCos execution.")
 
 	sess := session.Must(session.NewSession())
 	client := s3.New(sess, conf.COSClientConf)
@@ -50,8 +90,6 @@ func PutCos(c camp.Campsite) {
 	bucketName := conf.BucketName
 	key := "campsite.json"
 	out, _ := json.Marshal(c)
-
-	log.Println(out)
 
 	content := bytes.NewReader([]byte(string(out)))
 
