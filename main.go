@@ -8,9 +8,7 @@ import (
 
 	camp "github.com/samalgundi/api/lib/campsite"
 	cos "github.com/samalgundi/api/lib/cos"
-
 )
-
 
 func addCampSite(w http.ResponseWriter, r *http.Request) {
 

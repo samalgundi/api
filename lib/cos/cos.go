@@ -79,7 +79,7 @@ func loadConfigurationFile(c *configuration) error {
 }
 
 // PutCos writes a file to COS
-func PutCos(c camp.Campsite) {
+func PutCos(c camp.Campsite) error {
 
 	log.Println("Starting cos.PutCos execution.")
 
@@ -102,5 +102,7 @@ func PutCos(c camp.Campsite) {
 	// Call Function to upload (Put) an object
 	result, _ := client.PutObject(&input)
 	fmt.Println(result)
+
+	return nil
 
 }
