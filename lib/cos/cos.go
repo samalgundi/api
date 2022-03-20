@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"path"
@@ -17,7 +16,7 @@ import (
 	"github.com/IBM/ibm-cos-sdk-go/aws/session"
 	"github.com/IBM/ibm-cos-sdk-go/service/s3"
 
-	camp "github.com/samalgundi/api/lib/campsite"
+	defs "github.com/samalgundi/api/lib/campsite"
 )
 
 // expects a configuration file at this location
@@ -78,18 +77,58 @@ func loadConfigurationFile(c *configuration) error {
 	return nil
 }
 
-// PutCos writes a file to COS
-func PutCos(c camp.Campsite) error {
+// CreateBucket creates a bucket
+func CreateBucket(s string) error {
 
-	log.Println("Starting cos.PutCos execution.")
+	log.Println("Called cos.CreateBucket")
+
+	sess := session.Must(session.NewSession())
+	client := s3.New(sess, conf.COSClientConf)
+
+	input := &s3.CreateBucketInput{
+		Bucket: aws.String(s),
+	}
+	_, err := client.CreateBucket(input)
+
+	return err
+}
+
+// DeleteBucket deletes a bucket
+func DeleteBucket(s string) error {
+
+	log.Println("Called cos.DeleteBucket")
+
+	sess := session.Must(session.NewSession())
+	client := s3.New(sess, conf.COSClientConf)
+
+	input := &s3.DeleteBucketInput{
+		Bucket: aws.String(s),
+	}
+	client.DeleteBucket(input)
+
+	return nil
+}
+
+// SetBucket can be used to change the configured bucket
+func SetBucket(s string) error {
+
+	conf.BucketName = s
+
+	return nil
+}
+
+// PutCos writes a file to COS
+func PutObjectIntoCos(l defs.Location) error {
+
+	log.Println("Called cos.PutObjectIntoCos")
 
 	sess := session.Must(session.NewSession())
 	client := s3.New(sess, conf.COSClientConf)
 
 	// Variables and random content to sample, replace when appropriate
 	bucketName := conf.BucketName
-	key := "campsite.json"
-	out, _ := json.Marshal(c)
+	key := l.Type + "_" + l.UUID
+	out, _ := json.Marshal(l)
 
 	content := bytes.NewReader([]byte(string(out)))
 
@@ -100,9 +139,40 @@ func PutCos(c camp.Campsite) error {
 	}
 
 	// Call Function to upload (Put) an object
-	result, _ := client.PutObject(&input)
-	fmt.Println(result)
+	_, err := client.PutObject(&input)
+	// log.Println(result.GoString())
 
-	return nil
+	if err != nil {
+		return err
+	} else {
+		return nil
+	}
+}
 
+// Delete object from COS
+func DeleteObjectFromCos(l defs.Location) error {
+
+	log.Println("Called cos.DeleteObjectFromCos")
+
+	sess := session.Must(session.NewSession())
+	client := s3.New(sess, conf.COSClientConf)
+
+	// Variables and random content to sample, replace when appropriate
+	bucketName := conf.BucketName
+	key := l.Type + "_" + l.UUID
+
+	input := &s3.DeleteObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
+	}
+
+	// Call Function to upload (Put) an object
+	_, err := client.DeleteObject(input)
+	// log.Println(result.GoString())
+
+	if err != nil {
+		return err
+	} else {
+		return nil
+	}
 }
