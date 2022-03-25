@@ -117,7 +117,7 @@ func SetBucket(s string) error {
 	return nil
 }
 
-// PutCos writes a file to COS
+// PutObjectIntoCos writes an object to COS
 func PutObjectIntoCos(l defs.Location) error {
 
 	log.Println("Called cos.PutObjectIntoCos")
@@ -139,8 +139,9 @@ func PutObjectIntoCos(l defs.Location) error {
 	}
 
 	// Call Function to upload (Put) an object
-	_, err := client.PutObject(&input)
-	// log.Println(result.GoString())
+	result, err := client.PutObject(&input)
+	log.Println(result.GoString())
+	log.Println(err.Error())
 
 	if err != nil {
 		return err
