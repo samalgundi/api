@@ -2,7 +2,7 @@ FROM golang:alpine
 WORKDIR /app
 COPY ./ ./
 
-RUN go build -o /app/main
+RUN go build -buildvcs=false -o /app/main
 
 # Copy the exe into a smaller base image
 FROM alpine
