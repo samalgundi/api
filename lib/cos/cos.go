@@ -139,9 +139,8 @@ func PutObjectIntoCos(l defs.Location) error {
 	}
 
 	// Call Function to upload (Put) an object
-	result, err := client.PutObject(&input)
-	log.Println(result.GoString())
-	log.Println(err.Error())
+	_, err := client.PutObject(&input)
+	// log.Println(result.GoString())
 
 	if err != nil {
 		return err
