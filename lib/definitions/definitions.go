@@ -1,5 +1,7 @@
 package definitions
 
+import "github.com/google/uuid"
+
 //campsite json request payload is as follows,
 //{
 //  "name":    "thename",
@@ -8,7 +10,7 @@ package definitions
 //  "zip":     "zipcode",
 //  "type":    "type"
 //}
-type Location struct {
+type location struct {
 	Name    string `json:"name"`
 	Country string `json:"country"`
 	City    string `json:"city"`
@@ -17,6 +19,11 @@ type Location struct {
 	Type    string `json:"type"`
 }
 
-func AddCampSite() {
+// returns a new Location with a uuid
+func NewLocation(t string) *location {
+	l := location{Type: t}
 
+	l.UUID = uuid.New().String()
+
+	return &l
 }
