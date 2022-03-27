@@ -5,22 +5,20 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/google/uuid"
-	definitions "github.com/samalgundi/api/lib/campsite"
 	cos "github.com/samalgundi/api/lib/cos"
+	defs "github.com/samalgundi/api/lib/definitions"
 )
 
 var _ = Describe("Cos", func() {
 
-	var myTestCampsite definitions.Location
+	myTestCampsite := defs.NewLocation("campsite")
 
 	BeforeEach(func() {
-		myTestCampsite = definitions.Location{
-			Name:    "Villa BB",
-			Country: "Germany",
-			City:    "Boeblingen",
-			Zip:     "71032",
-			Type:    "campsite",
-		}
+
+		myTestCampsite.Name = "Villa BB"
+		myTestCampsite.Country = "Germany"
+		myTestCampsite.City = "Boeblingen"
+		myTestCampsite.Zip = "71032"
 
 	})
 

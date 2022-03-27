@@ -16,7 +16,7 @@ import (
 	"github.com/IBM/ibm-cos-sdk-go/aws/session"
 	"github.com/IBM/ibm-cos-sdk-go/service/s3"
 
-	defs "github.com/samalgundi/api/lib/campsite"
+	defs "github.com/samalgundi/api/lib/definitions"
 )
 
 // expects a configuration file at this location
@@ -118,7 +118,7 @@ func SetBucket(s string) error {
 }
 
 // PutObjectIntoCos writes an object to COS
-func PutObjectIntoCos(l defs.Location) error {
+func PutObjectIntoCos(l *defs.Location) error {
 
 	log.Println("Called cos.PutObjectIntoCos")
 
@@ -150,7 +150,7 @@ func PutObjectIntoCos(l defs.Location) error {
 }
 
 // Delete object from COS
-func DeleteObjectFromCos(l defs.Location) error {
+func DeleteObjectFromCos(l *defs.Location) error {
 
 	log.Println("Called cos.DeleteObjectFromCos")
 

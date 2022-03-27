@@ -6,8 +6,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	defs "github.com/samalgundi/api/lib/campsite"
 	cos "github.com/samalgundi/api/lib/cos"
+	defs "github.com/samalgundi/api/lib/definitions"
 )
 
 func addCampSite(w http.ResponseWriter, r *http.Request) {
@@ -20,13 +20,12 @@ func addCampSite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newCampsite := defs.Location{}
+	newCampsite := defs.NewLocation("campsite")
 
 	newCampsite.Name = r.FormValue("name")
 	newCampsite.Country = r.FormValue("country")
 	newCampsite.City = r.FormValue("city")
 	newCampsite.Zip = r.FormValue("zip")
-	newCampsite.Type = r.FormValue("type")
 
 	// log.Println(newCampsite)
 	err := cos.PutObjectIntoCos(newCampsite)

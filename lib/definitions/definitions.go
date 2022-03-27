@@ -10,7 +10,7 @@ import "github.com/google/uuid"
 //  "zip":     "zipcode",
 //  "type":    "type"
 //}
-type location struct {
+type Location struct {
 	Name    string `json:"name"`
 	Country string `json:"country"`
 	City    string `json:"city"`
@@ -20,8 +20,8 @@ type location struct {
 }
 
 // returns a new Location with a uuid
-func NewLocation(t string) *location {
-	l := location{Type: t}
+func NewLocation(t string) *Location {
+	l := Location{Type: t}
 
 	l.UUID = uuid.New().String()
 
